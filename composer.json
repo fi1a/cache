@@ -12,7 +12,8 @@
     }
   ],
   "require": {
-    "php": "^7.3 || ^8"
+    "php": "^7.3 || ^8",
+    "fi1a/hydrator": "~1.0"
   },
   "suggest": {
   },
