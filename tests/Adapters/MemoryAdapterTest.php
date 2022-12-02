@@ -4,41 +4,21 @@ declare(strict_types=1);
 
 namespace Fi1a\Unit\Cache\Adapters;
 
-use ErrorException;
 use Fi1a\Cache\Adapters\AdapterInterface;
-use Fi1a\Cache\Adapters\FilesystemAdapter;
+use Fi1a\Cache\Adapters\MemoryAdapter;
 use Fi1a\Unit\Cache\TestCase\FilesystemAdapterTestCase;
-use InvalidArgumentException;
 
 /**
- * Адаптер кэширования в файловой системе
+ * Адаптер кеширования в памяти
  */
-class FilesystemAdapterTest extends FilesystemAdapterTestCase
+class MemoryAdapterTest extends FilesystemAdapterTestCase
 {
     /**
      * Возвращает адаптер
      */
     private function getAdapter(): AdapterInterface
     {
-        return new FilesystemAdapter(self::$folderPath . '/cache');
-    }
-
-    /**
-     * Инициализация кеша
-     */
-    public function testConstructorException()
-    {
-        $this->expectException(ErrorException::class);
-        mkdir(self::$folderPath, 0775, true);
-        chmod(self::$folderPath, 0000);
-        try {
-            new FilesystemAdapter(self::$folderPath . '/cache');
-        } catch (ErrorException $exception) {
-            chmod(self::$folderPath, 0775);
-            self::deleteCacheFolder();
-
-            throw $exception;
-        }
+        return new MemoryAdapter();
     }
 
     /**
@@ -54,21 +34,6 @@ class FilesystemAdapterTest extends FilesystemAdapterTestCase
             'key4' => ['value1', 'hash4', time() + 1000, 'some-namespace'],
             'key5' => ['value2', 'hash5', time() + 1000, 'some/namespace'],
         ]));
-    }
-
-    /**
-     * Сохранение значений в кэше
-     */
-    public function testSaveError(): void
-    {
-        $adapter = $this->getAdapter();
-        chmod(self::$folderPath, 0000);
-        $this->assertFalse($adapter->save([
-            'key1' => ['value1', 'hash1', time() + 1000, ''],
-            'key2' => ['value2', 'hash2', time() + 1000, ''],
-            'key3' => ['value3', null, time() + 1000, ''],
-        ]));
-        chmod(self::$folderPath, 0775);
     }
 
     /**
@@ -112,23 +77,11 @@ class FilesystemAdapterTest extends FilesystemAdapterTestCase
     public function testDelete(): void
     {
         $adapter = $this->getAdapter();
+        $this->assertTrue($adapter->delete(['key6',], 'not-exists'));
         $this->assertTrue($adapter->delete(['key1', 'key2'], ''));
         $this->assertTrue($adapter->delete(['key4',], 'some-namespace'));
         $this->assertFalse($adapter->have('key1', ''));
         $this->assertFalse($adapter->have('key2', ''));
-    }
-
-    /**
-     * Очищает кэш
-     *
-     * @depends testSave
-     */
-    public function testClearFail(): void
-    {
-        $adapter = $this->getAdapter();
-        chmod(self::$folderPath, 0000);
-        $this->assertFalse($adapter->clear());
-        chmod(self::$folderPath, 0775);
     }
 
     /**
@@ -142,17 +95,5 @@ class FilesystemAdapterTest extends FilesystemAdapterTestCase
         $this->assertTrue($adapter->clear('some-namespace'));
         $this->assertTrue($adapter->clear());
         $this->assertTrue($adapter->clear());
-    }
-
-    /**
-     * Использование namespace
-     */
-    public function testNamespaceException(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $adapter = $this->getAdapter();
-        $this->assertTrue($adapter->save([
-            'key3' => ['value3', null, time() + 1000, '@'],
-        ]));
     }
 }

@@ -40,5 +40,5 @@ interface AdapterInterface
     /**
      * Очищает кэш
      */
-    public function clear(): bool;
+    public function clear(?string $namespace = null): bool;
 }

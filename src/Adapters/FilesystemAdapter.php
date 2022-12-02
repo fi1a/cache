@@ -143,15 +143,19 @@ class FilesystemAdapter implements AdapterInterface
     /**
      * @inheritDoc
      */
-    public function clear(): bool
+    public function clear(?string $namespace = null): bool
     {
-        if (!is_dir($this->folderPath)) {
+        $folderPath = $this->folderPath;
+        if ($namespace) {
+            $folderPath = $this->folderPath . DIRECTORY_SEPARATOR . $namespace;
+        }
+        if (!is_dir($folderPath)) {
             return true;
         }
 
         try {
             $directoryIterator = new RecursiveDirectoryIterator(
-                $this->folderPath,
+                $folderPath,
                 RecursiveDirectoryIterator::SKIP_DOTS
             );
         } catch (UnexpectedValueException $exception) {
@@ -172,9 +176,9 @@ class FilesystemAdapter implements AdapterInterface
 
             unlink($file->getRealPath());
         }
-        rmdir($this->folderPath);
+        rmdir($folderPath);
 
-        return !is_dir($this->folderPath);
+        return !is_dir($folderPath);
     }
 
     /**

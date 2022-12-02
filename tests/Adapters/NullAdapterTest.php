@@ -99,6 +99,7 @@ class NullAdapterTest extends TestCase
     public function testClear(): void
     {
         $adapter = $this->getAdapter();
+        $this->assertTrue($adapter->clear('some-namespace'));
         $this->assertTrue($adapter->clear());
         $this->assertTrue($adapter->clear());
     }
