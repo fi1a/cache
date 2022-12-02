@@ -16,7 +16,7 @@ use DateTimeInterface;
 class CacheItem implements CacheItemInterface
 {
     /**
-     * @var string
+     * @var mixed
      */
     private $key;
 
@@ -48,7 +48,7 @@ class CacheItem implements CacheItemInterface
     /**
      * @inheritDoc
      */
-    public function getKey(): string
+    public function getKey()
     {
         return $this->key;
     }

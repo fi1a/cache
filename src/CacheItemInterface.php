@@ -14,8 +14,10 @@ interface CacheItemInterface
 {
     /**
      * Возвращает ключ
+     *
+     * @return mixed
      */
-    public function getKey(): string;
+    public function getKey();
 
     /**
      * Возвращает значение
