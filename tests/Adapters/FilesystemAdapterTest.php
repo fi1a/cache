@@ -24,7 +24,7 @@ class FilesystemAdapterTest extends FilesystemAdapterTestCase
     }
 
     /**
-     * Инициализация кеша
+     * Инициализация кэша
      */
     public function testConstructorException()
     {

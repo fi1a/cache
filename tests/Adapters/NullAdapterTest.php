@@ -9,7 +9,7 @@ use Fi1a\Cache\Adapters\NullAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Адаптер кэширования (Null объект)
+ * Адаптер null
  */
 class NullAdapterTest extends TestCase
 {

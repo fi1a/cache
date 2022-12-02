@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Fi1a\Cache\Adapters;
 
 /**
- * Адаптер кэширования (Null объект)
+ * Адаптер null
  */
 class NullAdapter implements AdapterInterface
 {

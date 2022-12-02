@@ -60,6 +60,8 @@ interface CacheItemInterface
     public function expiresAt(?DateTimeInterface $expiration);
 
     /**
+     * Истекает через переданное время
+     *
      * @param int|DateInterval|null $time
      *
      * @return $this

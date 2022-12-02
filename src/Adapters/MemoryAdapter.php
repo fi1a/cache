@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Fi1a\Cache\Adapters;
 
 /**
- * Адаптер кеширования в памяти
+ * Адаптер кэширования в памяти
  */
 class MemoryAdapter implements AdapterInterface
 {

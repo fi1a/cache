@@ -20,7 +20,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 class CacheItemPoolTest extends FilesystemAdapterTestCase
 {
     /**
-     * Возвращает адаптер для кеша
+     * Возвращает адаптер для кэша
      */
     private function getAdapter(): AdapterInterface
     {
@@ -120,7 +120,7 @@ class CacheItemPoolTest extends FilesystemAdapterTestCase
     }
 
     /**
-     * Удаление элемента кеша
+     * Удаление элемента кэша
      *
      * @depends testGetItem
      */
@@ -132,7 +132,7 @@ class CacheItemPoolTest extends FilesystemAdapterTestCase
     }
 
     /**
-     * Удаление элементов кеша
+     * Удаление элементов кэша
      *
      * @depends testGetItem
      */
@@ -144,7 +144,7 @@ class CacheItemPoolTest extends FilesystemAdapterTestCase
     }
 
     /**
-     * Очищаем кеш
+     * Очищаем кэш
      *
      * @depends testHasItem
      */

@@ -9,7 +9,7 @@ use Fi1a\Cache\Adapters\MemoryAdapter;
 use Fi1a\Unit\Cache\TestCase\FilesystemAdapterTestCase;
 
 /**
- * Адаптер кеширования в памяти
+ * Адаптер кэширования в памяти
  */
 class MemoryAdapterTest extends FilesystemAdapterTestCase
 {

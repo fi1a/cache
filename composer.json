@@ -1,7 +1,7 @@
 {
   "name": "fi1a/cache",
   "type": "library",
-  "description": "PHP библиотека реализующая кэш",
+  "description": "PHP библиотека реализующая кэш (cache)",
   "keywords": [],
   "homepage": "https://github.com/fi1a/cache",
   "license": "MIT",
