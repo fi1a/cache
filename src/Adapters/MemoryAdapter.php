@@ -91,15 +91,9 @@ class MemoryAdapter implements AdapterInterface
     /**
      * @inheritDoc
      */
-    public function clear(?string $namespace = null): bool
+    public function clear(string $namespace): bool
     {
-        if ($namespace) {
-            self::$cache[$namespace] = [];
-
-            return true;
-        }
-
-        self::$cache = [];
+        self::$cache[$namespace] = [];
 
         return true;
     }

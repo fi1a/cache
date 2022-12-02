@@ -93,7 +93,7 @@ class MemoryAdapterTest extends FilesystemAdapterTestCase
     {
         $adapter = $this->getAdapter();
         $this->assertTrue($adapter->clear('some-namespace'));
-        $this->assertTrue($adapter->clear());
-        $this->assertTrue($adapter->clear());
+        $this->assertTrue($adapter->clear(''));
+        $this->assertTrue($adapter->clear(''));
     }
 }

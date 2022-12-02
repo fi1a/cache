@@ -155,7 +155,7 @@ class CacheItemPool implements CacheItemPoolInterface
         $this->checkDeferred();
         $result = false;
         try {
-            $result = $this->adapter->clear($this->namespace ?: null);
+            $result = $this->adapter->clear($this->namespace);
         } catch (\Throwable $exception) {
         }
 

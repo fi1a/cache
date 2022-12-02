@@ -44,7 +44,7 @@ class NullAdapter implements AdapterInterface
     /**
      * @inheritDoc
      */
-    public function clear(?string $namespace = null): bool
+    public function clear(string $namespace): bool
     {
         return true;
     }

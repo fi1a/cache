@@ -127,7 +127,7 @@ class FilesystemAdapterTest extends FilesystemAdapterTestCase
     {
         $adapter = $this->getAdapter();
         chmod(self::$folderPath, 0000);
-        $this->assertFalse($adapter->clear());
+        $this->assertFalse($adapter->clear(''));
         chmod(self::$folderPath, 0775);
     }
 
@@ -140,8 +140,8 @@ class FilesystemAdapterTest extends FilesystemAdapterTestCase
     {
         $adapter = $this->getAdapter();
         $this->assertTrue($adapter->clear('some-namespace'));
-        $this->assertTrue($adapter->clear());
-        $this->assertTrue($adapter->clear());
+        $this->assertTrue($adapter->clear(''));
+        $this->assertTrue($adapter->clear(''));
     }
 
     /**

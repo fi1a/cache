@@ -143,7 +143,7 @@ class FilesystemAdapter implements AdapterInterface
     /**
      * @inheritDoc
      */
-    public function clear(?string $namespace = null): bool
+    public function clear(string $namespace): bool
     {
         $folderPath = $this->folderPath;
         if ($namespace) {
