@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Fi1a\Cache;
 
 use Fi1a\Cache\Adapters\AdapterInterface;
+use Fi1a\Cache\DTO\KeyDTO;
 use Fi1a\Hydrator\Extractor;
+use Fi1a\Hydrator\ExtractorInterface;
 use Fi1a\Hydrator\Hydrator;
+use Fi1a\Hydrator\HydratorInterface;
 
 /**
  * Кэш
@@ -34,6 +37,16 @@ class CacheItemPool implements CacheItemPoolInterface
     private $adapter;
 
     /**
+     * @var HydratorInterface
+     */
+    private $hydrator;
+
+    /**
+     * @var ExtractorInterface
+     */
+    private $extractor;
+
+    /**
      * @inheritDoc
      */
     public function __construct(AdapterInterface $adapter, string $namespace = '', int $defaultTtl = 0)
@@ -41,6 +54,8 @@ class CacheItemPool implements CacheItemPoolInterface
         $this->namespace = $namespace;
         $this->defaultTtl = $defaultTtl;
         $this->adapter = $adapter;
+        $this->hydrator = new Hydrator();
+        $this->extractor = new Extractor();
     }
 
     /**
@@ -53,7 +68,18 @@ class CacheItemPool implements CacheItemPoolInterface
         $value = null;
         $expire = null;
         try {
-            $items = $this->adapter->fetch([[$this->getStoredKey($key), $hash, $this->namespace,],]);
+            /**
+             * @var KeyDTO $keyDto
+             */
+            $keyDto = $this->hydrator->hydrate(
+                [
+                    'key' => $this->getStoredKey($key),
+                    'hash' => $hash,
+                    'namespace' => $this->namespace,
+                ],
+                KeyDTO::class
+            );
+            $items = $this->adapter->fetch([$keyDto]);
             if (count($items)) {
                 $item = array_shift($items);
                 [$value, $hash, $expire] = $item;
@@ -100,7 +126,18 @@ class CacheItemPool implements CacheItemPoolInterface
         $this->checkDeferred();
         $result = false;
         try {
-            $result = $this->adapter->have($this->getStoredKey($key), $this->namespace, $hash);
+            /**
+             * @var KeyDTO $keyDto
+             */
+            $keyDto = $this->hydrator->hydrate(
+                [
+                    'key' => $this->getStoredKey($key),
+                    'hash' => $hash,
+                    'namespace' => $this->namespace,
+                ],
+                KeyDTO::class
+            );
+            $result = $this->adapter->have($keyDto);
         } catch (\Throwable $exception) {
         }
 
@@ -115,7 +152,17 @@ class CacheItemPool implements CacheItemPoolInterface
         $this->checkDeferred();
         $result = false;
         try {
-            $result = $this->adapter->delete([$this->getStoredKey($key),], $this->namespace);
+            /**
+             * @var KeyDTO $keyDto
+             */
+            $keyDto = $this->hydrator->hydrate(
+                [
+                    'key' => $this->getStoredKey($key),
+                    'namespace' => $this->namespace,
+                ],
+                KeyDTO::class
+            );
+            $result = $this->adapter->delete([$keyDto]);
         } catch (\Throwable $exception) {
         }
 
@@ -129,18 +176,28 @@ class CacheItemPool implements CacheItemPoolInterface
     {
         $this->checkDeferred();
         /**
-         * @var string[] $storedKeys
+         * @var KeyDTO[] $keysDTO
          */
-        $storedKeys = [];
+        $keysDTO = [];
         /**
          * @var mixed $key
          */
-        foreach ($keys as $ind => $key) {
-            $storedKeys[$ind] = $this->getStoredKey($key);
+        foreach ($keys as $key) {
+            /**
+             * @var KeyDTO $keyDto
+             */
+            $keyDto = $this->hydrator->hydrate(
+                [
+                    'key' => $this->getStoredKey($key),
+                    'namespace' => $this->namespace,
+                ],
+                KeyDTO::class
+            );
+            $keysDTO[] = $keyDto;
         }
         $result = false;
         try {
-            $result = $this->adapter->delete($storedKeys, $this->namespace);
+            $result = $this->adapter->delete($keysDTO);
         } catch (\Throwable $exception) {
         }
 
@@ -229,8 +286,6 @@ class CacheItemPool implements CacheItemPoolInterface
      */
     private function factoryCacheItem($key, $value, ?string $hash, bool $isHit, ?int $expire): CacheItemInterface
     {
-        $hydrator = new Hydrator();
-
         if (!$expire) {
             $expire = $this->defaultTtl ? $this->defaultTtl + time() : 0;
         }
@@ -238,7 +293,7 @@ class CacheItemPool implements CacheItemPoolInterface
         /**
          * @var CacheItemInterface $cacheItem
          */
-        $cacheItem = $hydrator->hydrate([
+        $cacheItem = $this->hydrator->hydrate([
             'key' => $key,
             'value' => $value,
             'hash' => $hash,
@@ -257,13 +312,11 @@ class CacheItemPool implements CacheItemPoolInterface
      */
     private function expandValues(): array
     {
-        $extractor = new Extractor();
-
         $expand = [];
         foreach ($this->getDeferred() as $key => $item) {
             $expand[$key] = array_values(
                 array_merge(
-                    $extractor->extract($item, ['value', 'hash', 'expire']),
+                    $this->extractor->extract($item, ['value', 'hash', 'expire']),
                     [$this->namespace]
                 )
             );

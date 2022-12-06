@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fi1a\Cache\Adapters;
 
 use ErrorException;
+use Fi1a\Cache\DTO\KeyDTO;
 use InvalidArgumentException;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -46,11 +47,8 @@ class FilesystemAdapter implements AdapterInterface
     {
         $values = [];
         $now = time();
-        foreach ($keys as $item) {
-            [$key, $hash, $namespace] = $item;
-            $key = (string) $key;
-            $namespace = (string) $namespace;
-            $path = $this->getFile($key, $namespace);
+        foreach ($keys as $keyDTO) {
+            $path = $this->getFile($keyDTO->key, $keyDTO->namespace);
             if (!is_file($path) || !($file = @fopen($path, 'rb'))) {
                 continue;
             }
@@ -60,7 +58,7 @@ class FilesystemAdapter implements AdapterInterface
             if (!$itemHash) {
                 $itemHash = null;
             }
-            if ($now >= $expire || $hash !== $itemHash) {
+            if ($now >= $expire || $keyDTO->hash !== $itemHash) {
                 flock($file, LOCK_UN);
                 fclose($file);
                 @unlink($path);
@@ -74,7 +72,7 @@ class FilesystemAdapter implements AdapterInterface
 
             flock($file, LOCK_UN);
             fclose($file);
-            $values[$key] = [$value, $itemHash, $expire];
+            $values[$keyDTO->key] = [$value, $itemHash, $expire];
         }
 
         return $values;
@@ -119,21 +117,21 @@ class FilesystemAdapter implements AdapterInterface
     /**
     * @inheritDoc
     */
-    public function have(string $key, string $namespace, ?string $hash = null): bool
+    public function have(KeyDTO $keyDTO): bool
     {
-        $filePath = $this->getFile($key, $namespace);
+        $filePath = $this->getFile($keyDTO->key, $keyDTO->namespace);
 
-        return is_file($filePath) && count($this->fetch([[$key, $hash, $namespace,]]));
+        return is_file($filePath) && count($this->fetch([$keyDTO]));
     }
 
     /**
      * @inheritDoc
      */
-    public function delete(array $keys, string $namespace): bool
+    public function delete(array $keys): bool
     {
         $result = true;
-        foreach ($keys as $key) {
-            $filePath = $this->getFile($key, $namespace);
+        foreach ($keys as $keyDto) {
+            $filePath = $this->getFile($keyDto->key, $keyDto->namespace);
             $result = (!is_file($filePath) || unlink($filePath) || !is_file($filePath)) && $result;
         }
 

@@ -6,6 +6,8 @@ namespace Fi1a\Unit\Cache\Adapters;
 
 use Fi1a\Cache\Adapters\AdapterInterface;
 use Fi1a\Cache\Adapters\MemoryAdapter;
+use Fi1a\Cache\DTO\KeyDTO;
+use Fi1a\Hydrator\Hydrator;
 use Fi1a\Unit\Cache\TestCase\FilesystemAdapterTestCase;
 
 /**
@@ -43,12 +45,53 @@ class MemoryAdapterTest extends FilesystemAdapterTestCase
      */
     public function testHave(): void
     {
+        $hydrator = new Hydrator();
         $adapter = $this->getAdapter();
-        $this->assertTrue($adapter->have('key1', '', 'hash1'));
-        $this->assertFalse($adapter->have('unknown', ''));
-        $this->assertTrue($adapter->have('key4', 'some-namespace', 'hash4'));
-        $this->assertTrue($adapter->have('key5', 'some/namespace', 'hash5'));
-        $this->assertFalse($adapter->have('key1', 'some-namespace', 'hash1'));
+        /**
+         * @var KeyDTO $keyDto
+         */
+        $keyDto = $hydrator->hydrate([
+            'key' => 'key1',
+            'namespace' => '',
+            'hash' => 'hash1',
+        ], KeyDTO::class);
+        $this->assertTrue($adapter->have($keyDto));
+        /**
+         * @var KeyDTO $keyDto
+         */
+        $keyDto = $hydrator->hydrate([
+            'key' => 'unknown',
+            'namespace' => '',
+            'hash' => '',
+        ], KeyDTO::class);
+        $this->assertFalse($adapter->have($keyDto));
+        /**
+         * @var KeyDTO $keyDto
+         */
+        $keyDto = $hydrator->hydrate([
+            'key' => 'key4',
+            'namespace' => 'some-namespace',
+            'hash' => 'hash4',
+        ], KeyDTO::class);
+        $this->assertTrue($adapter->have($keyDto));
+        /**
+         * @var KeyDTO $keyDto
+         */
+        $keyDto = $hydrator->hydrate([
+            'key' => 'key5',
+            'namespace' => 'some/namespace',
+            'hash' => 'hash5',
+        ], KeyDTO::class);
+        $this->assertTrue($adapter->have($keyDto));
+        /**
+         * @var KeyDTO $keyDto
+         */
+        $keyDto = $hydrator->hydrate([
+            'key' => 'key1',
+            'namespace' => 'some-namespace',
+            'hash' => 'hash1',
+        ], KeyDTO::class);
+        $this->assertFalse($adapter->have($keyDto));
     }
 
     /**
@@ -58,14 +101,39 @@ class MemoryAdapterTest extends FilesystemAdapterTestCase
      */
     public function testFetch(): void
     {
+        $hydrator = new Hydrator();
         $adapter = $this->getAdapter();
         $this->assertCount(2, $adapter->fetch([
-            ['key1', 'hash1', ''],
-            ['key2', 'new-hash', ''],
-            ['key3', null, ''],
-            ['unknown', null, ''],
-            ['key4', 'hash1', 'some-namespace'],
-            ['key5', 'hash1', 'some/namespace'],
+            $hydrator->hydrate([
+                'key' => 'key1',
+                'namespace' => '',
+                'hash' => 'hash1',
+            ], KeyDTO::class),
+            $hydrator->hydrate([
+                'key' => 'key2',
+                'namespace' => '',
+                'hash' => 'new-hash',
+            ], KeyDTO::class),
+            $hydrator->hydrate([
+                'key' => 'key3',
+                'namespace' => '',
+                'hash' => null,
+            ], KeyDTO::class),
+            $hydrator->hydrate([
+                'key' => 'unknown',
+                'namespace' => '',
+                'hash' => null,
+            ], KeyDTO::class),
+            $hydrator->hydrate([
+                'key' => 'key4',
+                'namespace' => 'some-namespace',
+                'hash' => 'hash1',
+            ], KeyDTO::class),
+            $hydrator->hydrate([
+                'key' => 'key5',
+                'namespace' => 'some/namespace',
+                'hash' => 'hash1',
+            ], KeyDTO::class),
         ]));
     }
 
@@ -76,12 +144,42 @@ class MemoryAdapterTest extends FilesystemAdapterTestCase
      */
     public function testDelete(): void
     {
+        $hydrator = new Hydrator();
         $adapter = $this->getAdapter();
-        $this->assertTrue($adapter->delete(['key6',], 'not-exists'));
-        $this->assertTrue($adapter->delete(['key1', 'key2'], ''));
-        $this->assertTrue($adapter->delete(['key4',], 'some-namespace'));
-        $this->assertFalse($adapter->have('key1', ''));
-        $this->assertFalse($adapter->have('key2', ''));
+        /**
+         * @var KeyDTO $keyDto1
+         */
+        $keyDto1 = $hydrator->hydrate([
+            'key' => 'key1',
+            'namespace' => '',
+        ], KeyDTO::class);
+        /**
+         * @var KeyDTO $keyDto2
+         */
+        $keyDto2 = $hydrator->hydrate([
+            'key' => 'key2',
+            'namespace' => '',
+        ], KeyDTO::class);
+        $this->assertTrue($adapter->delete([$keyDto1, $keyDto2]));
+        /**
+         * @var KeyDTO $keyDto4
+         */
+        $keyDto4 = $hydrator->hydrate([
+            'key' => 'key4',
+            'namespace' => 'some-namespace',
+        ], KeyDTO::class);
+
+        $this->assertTrue($adapter->delete([$keyDto4]));
+        /**
+         * @var KeyDTO $keyDto5
+         */
+        $keyDto5 = $hydrator->hydrate([
+            'key' => 'key5',
+            'namespace' => 'unknown',
+        ], KeyDTO::class);
+        $this->assertTrue($adapter->delete([$keyDto5]));
+        $this->assertFalse($adapter->have($keyDto1));
+        $this->assertFalse($adapter->have($keyDto2));
     }
 
     /**
