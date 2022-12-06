@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Fi1a\Cache\Adapters;
 
+use Fi1a\Cache\DTO\KeyDTO;
+
 /**
  * Интерфейс адаптера кэша
  */
@@ -12,7 +14,7 @@ interface AdapterInterface
     /**
      * Возвращает значение из кэша
      *
-     * @param string[][]|null[][] $keys
+     * @param KeyDTO[] $keys
      *
      * @return mixed[][]
      */
@@ -28,14 +30,14 @@ interface AdapterInterface
     /**
      * Проверяет наличие значения в кэше
      */
-    public function have(string $key, string $namespace, ?string $hash = null): bool;
+    public function have(KeyDTO $keyDTO): bool;
 
     /**
      * Удаляет значение из кэша
      *
-     * @param string[] $keys
+     * @param KeyDTO[] $keys
      */
-    public function delete(array $keys, string $namespace): bool;
+    public function delete(array $keys): bool;
 
     /**
      * Очищает кэш

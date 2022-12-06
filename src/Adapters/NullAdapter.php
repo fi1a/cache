@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Fi1a\Cache\Adapters;
 
+use Fi1a\Cache\DTO\KeyDTO;
+
 /**
  * Адаптер null
  */
@@ -28,7 +30,7 @@ class NullAdapter implements AdapterInterface
     /**
     * @inheritDoc
     */
-    public function have(string $key, string $namespace, ?string $hash = null): bool
+    public function have(KeyDTO $keyDTO): bool
     {
         return false;
     }
@@ -36,7 +38,7 @@ class NullAdapter implements AdapterInterface
     /**
      * @inheritDoc
      */
-    public function delete(array $keys, string $namespace): bool
+    public function delete(array $keys): bool
     {
         return true;
     }

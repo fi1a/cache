@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Fi1a\Cache\Adapters;
 
+use Fi1a\Cache\DTO\KeyDTO;
+
 /**
  * Адаптер кэширования в памяти
  */
@@ -21,23 +23,20 @@ class MemoryAdapter implements AdapterInterface
     {
         $values = [];
         $now = time();
-        foreach ($keys as $item) {
-            [$key, $hash, $namespace] = $item;
-            $key = (string) $key;
-            $namespace = (string) $namespace;
+        foreach ($keys as $keyDTO) {
             if (
-                !array_key_exists($namespace, self::$cache)
-                || !array_key_exists($key, self::$cache[$namespace])
+                !array_key_exists($keyDTO->namespace, self::$cache)
+                || !array_key_exists($keyDTO->key, self::$cache[$keyDTO->namespace])
             ) {
                 continue;
             }
-            [$value, $itemHash, $expire] = self::$cache[$namespace][$key];
-            if ($now >= $expire || $hash !== $itemHash) {
-                unset(self::$cache[$namespace][$key]);
+            [$value, $itemHash, $expire] = self::$cache[$keyDTO->namespace][$keyDTO->key];
+            if ($now >= $expire || $keyDTO->hash !== $itemHash) {
+                unset(self::$cache[$keyDTO->namespace][$keyDTO->key]);
 
                 continue;
             }
-            $values[$key] = [$value, $itemHash, $expire];
+            $values[$keyDTO->key] = [$value, $itemHash, $expire];
         }
 
         return $values;
@@ -62,27 +61,26 @@ class MemoryAdapter implements AdapterInterface
     /**
     * @inheritDoc
     */
-    public function have(string $key, string $namespace, ?string $hash = null): bool
+    public function have(KeyDTO $keyDTO): bool
     {
-        return array_key_exists($namespace, self::$cache)
-            && array_key_exists($key, self::$cache[$namespace])
-            && count($this->fetch([[$key, $hash, $namespace,]]));
+        return array_key_exists($keyDTO->namespace, self::$cache)
+            && array_key_exists($keyDTO->key, self::$cache[$keyDTO->namespace])
+            && count($this->fetch([$keyDTO]));
     }
 
     /**
      * @inheritDoc
      */
-    public function delete(array $keys, string $namespace): bool
+    public function delete(array $keys): bool
     {
-        if (!array_key_exists($namespace, self::$cache)) {
-            return true;
-        }
-
-        foreach ($keys as $key) {
-            if (!array_key_exists($key, self::$cache[$namespace])) {
+        foreach ($keys as $keyDto) {
+            if (!array_key_exists($keyDto->namespace, self::$cache)) {
                 continue;
             }
-            unset(self::$cache[$namespace][$key]);
+            if (!array_key_exists($keyDto->key, self::$cache[$keyDto->namespace])) {
+                continue;
+            }
+            unset(self::$cache[$keyDto->namespace][$keyDto->key]);
         }
 
         return true;
