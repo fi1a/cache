@@ -32,9 +32,20 @@ composer require fi1a/cache
 ```php
 use Fi1a\Cache\Adapters\FilesystemAdapter;
 use Fi1a\Cache\CacheItemPool;
+use Fi1a\Filesystem\Adapters\LocalAdapter;
+use Fi1a\Filesystem\Filesystem;
 
-$adapter = new FilesystemAdapter(__DIR__ . '/runtime/cache');
+$cachePath = __DIR__ . '/runtime/cache';
+
+if (!is_dir($cachePath)) {
+    mkdir($cachePath, 0775, true);
+}
+
+$filesystem = new Filesystem(new LocalAdapter($cachePath));
+$adapter = new FilesystemAdapter($filesystem->factoryFolder($cachePath));
+
 $cache = new CacheItemPool($adapter, 'your/namespace');
+
 $item = $cache->getItem('cache-key'); // Fi1a\Cache\CacheItemInterface
 $item->get(); // null
 $item->set('some-value');
@@ -80,9 +91,20 @@ $item->get(); // 'some-value'
 ```php
 use Fi1a\Cache\Adapters\FilesystemAdapter;
 use Fi1a\Cache\CacheItemPool;
+use Fi1a\Filesystem\Adapters\LocalAdapter;
+use Fi1a\Filesystem\Filesystem;
 
-$adapter = new FilesystemAdapter(__DIR__ . '/runtime/cache');
+$cachePath = __DIR__ . '/runtime/cache';
+
+if (!is_dir($cachePath)) {
+    mkdir($cachePath, 0775, true);
+}
+
+$filesystem = new Filesystem(new LocalAdapter($cachePath));
+$adapter = new FilesystemAdapter($filesystem->factoryFolder($cachePath));
+
 $cache = new CacheItemPool($adapter, 'your/namespace');
+
 $item = $cache->getItem('cache-key'); // Fi1a\Cache\CacheItemInterface
 ```
 
@@ -93,8 +115,17 @@ $item = $cache->getItem('cache-key'); // Fi1a\Cache\CacheItemInterface
 ```php
 use Fi1a\Cache\Adapters\FilesystemAdapter;
 use Fi1a\Cache\CacheItemPool;
+use Fi1a\Filesystem\Adapters\LocalAdapter;
+use Fi1a\Filesystem\Filesystem;
 
-$adapter = new FilesystemAdapter(__DIR__ . '/runtime/cache');
+$cachePath = __DIR__ . '/runtime/cache';
+
+if (!is_dir($cachePath)) {
+    mkdir($cachePath, 0775, true);
+}
+
+$filesystem = new Filesystem(new LocalAdapter($cachePath));
+$adapter = new FilesystemAdapter($filesystem->factoryFolder($cachePath));
 $cache = new CacheItemPool($adapter, 'your/namespace');
 $items = $cache->getItems([['cache-key-1'], ['cache-key-2', 'hash2']]); // Fi1a\Cache\CacheItemInterface[]
 ```

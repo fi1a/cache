@@ -11,6 +11,9 @@ use Fi1a\Cache\Adapters\FilesystemAdapter;
 use Fi1a\Cache\CacheItemInterface;
 use Fi1a\Cache\CacheItemPool;
 use Fi1a\Cache\CacheItemPoolInterface;
+use Fi1a\Filesystem\Adapters\LocalAdapter;
+use Fi1a\Filesystem\Filesystem;
+use Fi1a\Filesystem\FolderInterface;
 use Fi1a\Unit\Cache\TestCase\FilesystemAdapterTestCase;
 use PHPUnit\Framework\MockObject\MockObject;
 
@@ -20,11 +23,19 @@ use PHPUnit\Framework\MockObject\MockObject;
 class CacheItemPoolTest extends FilesystemAdapterTestCase
 {
     /**
+     *  Возвращает папку для кэша
+     */
+    private function getCacheFolder(): FolderInterface
+    {
+        return (new Filesystem(new LocalAdapter(self::$folderPath)))->factoryFolder('./cache');
+    }
+
+    /**
      * Возвращает адаптер для кэша
      */
     private function getAdapter(): AdapterInterface
     {
-        return new FilesystemAdapter(self::$folderPath . '/cache');
+        return new FilesystemAdapter($this->getCacheFolder());
     }
 
     /**
@@ -247,7 +258,7 @@ class CacheItemPoolTest extends FilesystemAdapterTestCase
          * @var MockObject|FilesystemAdapter $adapter
          */
         $adapter = $this->getMockBuilder(FilesystemAdapter::class)
-            ->setConstructorArgs([self::$folderPath . '/cache'])
+            ->setConstructorArgs([$this->getCacheFolder()])
             ->getMock();
         $adapter->method('fetch')->willThrowException(new Exception());
 
@@ -266,7 +277,7 @@ class CacheItemPoolTest extends FilesystemAdapterTestCase
          * @var MockObject|FilesystemAdapter $adapter
          */
         $adapter = $this->getMockBuilder(FilesystemAdapter::class)
-            ->setConstructorArgs([self::$folderPath . '/cache'])
+            ->setConstructorArgs([$this->getCacheFolder()])
             ->getMock();
         $adapter->method('save')->willThrowException(new Exception());
 
@@ -285,7 +296,7 @@ class CacheItemPoolTest extends FilesystemAdapterTestCase
          * @var MockObject|FilesystemAdapter $adapter
          */
         $adapter = $this->getMockBuilder(FilesystemAdapter::class)
-            ->setConstructorArgs([self::$folderPath . '/cache'])
+            ->setConstructorArgs([$this->getCacheFolder()])
             ->getMock();
         $adapter->method('have')->willThrowException(new Exception());
 
@@ -304,7 +315,7 @@ class CacheItemPoolTest extends FilesystemAdapterTestCase
          * @var MockObject|FilesystemAdapter $adapter
          */
         $adapter = $this->getMockBuilder(FilesystemAdapter::class)
-            ->setConstructorArgs([self::$folderPath . '/cache'])
+            ->setConstructorArgs([$this->getCacheFolder()])
             ->getMock();
         $adapter->method('delete')->willThrowException(new \Exception());
 
@@ -323,7 +334,7 @@ class CacheItemPoolTest extends FilesystemAdapterTestCase
          * @var MockObject|FilesystemAdapter $adapter
          */
         $adapter = $this->getMockBuilder(FilesystemAdapter::class)
-            ->setConstructorArgs([self::$folderPath . '/cache'])
+            ->setConstructorArgs([$this->getCacheFolder()])
             ->getMock();
         $adapter->method('delete')->willThrowException(new \Exception());
 
@@ -342,7 +353,7 @@ class CacheItemPoolTest extends FilesystemAdapterTestCase
          * @var MockObject|FilesystemAdapter $adapter
          */
         $adapter = $this->getMockBuilder(FilesystemAdapter::class)
-            ->setConstructorArgs([self::$folderPath . '/cache'])
+            ->setConstructorArgs([$this->getCacheFolder()])
             ->getMock();
         $adapter->method('clear')->willThrowException(new \Exception());
 

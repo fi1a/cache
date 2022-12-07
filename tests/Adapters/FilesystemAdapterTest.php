@@ -8,6 +8,9 @@ use ErrorException;
 use Fi1a\Cache\Adapters\AdapterInterface;
 use Fi1a\Cache\Adapters\FilesystemAdapter;
 use Fi1a\Cache\DTO\KeyDTO;
+use Fi1a\Filesystem\Adapters\LocalAdapter;
+use Fi1a\Filesystem\Filesystem;
+use Fi1a\Filesystem\FolderInterface;
 use Fi1a\Hydrator\Hydrator;
 use Fi1a\Unit\Cache\TestCase\FilesystemAdapterTestCase;
 use InvalidArgumentException;
@@ -18,11 +21,19 @@ use InvalidArgumentException;
 class FilesystemAdapterTest extends FilesystemAdapterTestCase
 {
     /**
-     * Возвращает адаптер
+     *  Возвращает папку для кэша
+     */
+    private function getCacheFolder(): FolderInterface
+    {
+        return (new Filesystem(new LocalAdapter(self::$folderPath)))->factoryFolder('./cache');
+    }
+
+    /**
+     * Возвращает адаптер для кэша
      */
     private function getAdapter(): AdapterInterface
     {
-        return new FilesystemAdapter(self::$folderPath . '/cache');
+        return new FilesystemAdapter($this->getCacheFolder());
     }
 
     /**
@@ -31,13 +42,11 @@ class FilesystemAdapterTest extends FilesystemAdapterTestCase
     public function testConstructorException()
     {
         $this->expectException(ErrorException::class);
-        mkdir(self::$folderPath, 0775, true);
         chmod(self::$folderPath, 0000);
         try {
-            new FilesystemAdapter(self::$folderPath . '/cache');
+            $this->getAdapter();
         } catch (ErrorException $exception) {
             chmod(self::$folderPath, 0775);
-            self::deleteCacheFolder();
 
             throw $exception;
         }
@@ -216,9 +225,9 @@ class FilesystemAdapterTest extends FilesystemAdapterTestCase
     public function testClearFail(): void
     {
         $adapter = $this->getAdapter();
-        chmod(self::$folderPath, 0000);
+        chmod(self::$folderPath . '/cache', 0000);
         $this->assertFalse($adapter->clear(''));
-        chmod(self::$folderPath, 0775);
+        chmod(self::$folderPath . '/cache', 0775);
     }
 
     /**
