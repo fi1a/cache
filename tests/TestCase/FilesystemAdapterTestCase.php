@@ -15,6 +15,12 @@ class FilesystemAdapterTestCase extends TestCase
      */
     protected static $folderPath = __DIR__ . '/../runtime';
 
+    public static function setUpBeforeClass(): void
+    {
+        parent::setUpBeforeClass();
+        mkdir(self::$folderPath);
+    }
+
     /**
      * @inheritDoc
      */

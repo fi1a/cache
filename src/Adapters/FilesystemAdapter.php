@@ -6,14 +6,11 @@ namespace Fi1a\Cache\Adapters;
 
 use ErrorException;
 use Fi1a\Cache\DTO\KeyDTO;
+use Fi1a\Filesystem\FileInterface;
+use Fi1a\Filesystem\FolderInterface;
 use InvalidArgumentException;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
-use UnexpectedValueException;
 
 use const DIRECTORY_SEPARATOR;
-use const LOCK_SH;
-use const LOCK_UN;
 use const PHP_EOL;
 
 /**
@@ -22,22 +19,21 @@ use const PHP_EOL;
 class FilesystemAdapter implements AdapterInterface
 {
     /**
-     * @var string
+     * @var FolderInterface
      */
-    private $folderPath;
+    private $folder;
 
     /**
      * Конструктор
      */
-    public function __construct(string $folderPath)
+    public function __construct(FolderInterface $folder)
     {
-        if (
-            !is_dir($folderPath)
-            && !@mkdir($folderPath, 0775, true)
-        ) {
-            throw new ErrorException(sprintf('Не удалось создать папку "%s"', $folderPath));
+        if (!$folder->isExist() && !$folder->make()) {
+            throw new ErrorException(
+                sprintf('Не удалось создать папку "%s"', $folder->getPath())
+            );
         }
-        $this->folderPath = $folderPath;
+        $this->folder = $folder;
     }
 
     /**
@@ -48,30 +44,24 @@ class FilesystemAdapter implements AdapterInterface
         $values = [];
         $now = time();
         foreach ($keys as $keyDTO) {
-            $path = $this->getFile($keyDTO->key, $keyDTO->namespace);
-            if (!is_file($path) || !($file = @fopen($path, 'rb'))) {
+            $file = $this->getFile($keyDTO->key, $keyDTO->namespace);
+            if (!$file->isExist()) {
                 continue;
             }
-            flock($file, LOCK_SH);
-            $expire = (int) fgets($file);
-            $itemHash = trim(fgets($file));
+            [$expire, $itemHash, $value] = explode(PHP_EOL, (string) $file->read());
             if (!$itemHash) {
                 $itemHash = null;
             }
             if ($now >= $expire || $keyDTO->hash !== $itemHash) {
-                flock($file, LOCK_UN);
-                fclose($file);
-                @unlink($path);
+                $file->delete();
 
                 continue;
             }
             /**
              * @var mixed $value
              */
-            $value = unserialize(stream_get_contents($file));
+            $value = unserialize($value);
 
-            flock($file, LOCK_UN);
-            fclose($file);
             $values[$keyDTO->key] = [$value, $itemHash, $expire];
         }
 
@@ -94,21 +84,22 @@ class FilesystemAdapter implements AdapterInterface
             $hash = (string) $hash;
             $namespace = (string) $namespace;
             $expire = $expire ?: strtotime('+1 year', $now);
-            $filePath = $this->getFile($key, $namespace);
-            $folderPath = dirname($filePath);
+            $file = $this->getFile($key, $namespace);
+            /**
+             * @var FolderInterface $folder
+             */
+            $folder = $file->getParent();
             $value = $expire . PHP_EOL . $hash . PHP_EOL . serialize($value);
             if (
                 (
-                    !is_dir($folderPath)
-                    && !@mkdir($folderPath, 0775, true)
+
+                    !$folder->isExist()
+                    && !$folder->make()
                 )
-                || file_put_contents($filePath, $value) === false
+                || $file->write($value) === false
             ) {
                 $result = false;
-
-                continue;
             }
-            @touch($filePath, $expire);
         }
 
         return $result;
@@ -119,9 +110,9 @@ class FilesystemAdapter implements AdapterInterface
     */
     public function have(KeyDTO $keyDTO): bool
     {
-        $filePath = $this->getFile($keyDTO->key, $keyDTO->namespace);
+        $file = $this->getFile($keyDTO->key, $keyDTO->namespace);
 
-        return is_file($filePath) && count($this->fetch([$keyDTO]));
+        return $file->isExist() && count($this->fetch([$keyDTO]));
     }
 
     /**
@@ -131,8 +122,8 @@ class FilesystemAdapter implements AdapterInterface
     {
         $result = true;
         foreach ($keys as $keyDto) {
-            $filePath = $this->getFile($keyDto->key, $keyDto->namespace);
-            $result = (!is_file($filePath) || unlink($filePath) || !is_file($filePath)) && $result;
+            $file = $this->getFile($keyDto->key, $keyDto->namespace);
+            $result = (!$file->isExist() || $file->delete() || !$file->isExist()) && $result;
         }
 
         return $result;
@@ -143,56 +134,34 @@ class FilesystemAdapter implements AdapterInterface
      */
     public function clear(string $namespace): bool
     {
-        $folderPath = $this->folderPath;
+        $folder = $this->folder;
         if ($namespace) {
-            $folderPath = $this->folderPath . DIRECTORY_SEPARATOR . $namespace;
+            $folder = $folder->getFolder($namespace);
         }
-        if (!is_dir($folderPath)) {
+        if (!$folder->isExist()) {
             return true;
         }
 
-        try {
-            $directoryIterator = new RecursiveDirectoryIterator(
-                $folderPath,
-                RecursiveDirectoryIterator::SKIP_DOTS
-            );
-        } catch (UnexpectedValueException $exception) {
-            return false;
-        }
-
-        $filesIterator = new RecursiveIteratorIterator($directoryIterator, RecursiveIteratorIterator::CHILD_FIRST);
-
-        /**
-         * @var RecursiveDirectoryIterator $file
-         */
-        foreach ($filesIterator as $file) {
-            if ($file->isDir()) {
-                rmdir($file->getRealPath());
-
-                continue;
-            }
-
-            unlink($file->getRealPath());
-        }
-        rmdir($folderPath);
-
-        return !is_dir($folderPath);
+        return $folder->delete();
     }
 
     /**
      * Возвращает файл
      */
-    private function getFile(string $key, string $namespace): string
+    private function getFile(string $key, string $namespace): FileInterface
     {
         if (preg_match('/([\:\*\?\"\<\>\|\+\%\!\@]+)/mui', $namespace) > 0) {
             throw new InvalidArgumentException('Использованы запрещенные символы в $namespace');
         }
 
-        return $this->folderPath
-            . ($namespace ? DIRECTORY_SEPARATOR . $namespace : '')
-            . DIRECTORY_SEPARATOR . $key[0]
-            . DIRECTORY_SEPARATOR . $key[1]
-            . DIRECTORY_SEPARATOR . $key[2]
-            . DIRECTORY_SEPARATOR . $key;
+        $folder = $this->folder;
+        if ($namespace) {
+            $folder = $folder->getFolder($namespace);
+        }
+
+        return $folder->getFile(
+            $key[0] . DIRECTORY_SEPARATOR . $key[1]
+            . DIRECTORY_SEPARATOR . $key[2] . DIRECTORY_SEPARATOR . $key
+        );
     }
 }
