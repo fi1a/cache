@@ -297,8 +297,8 @@ class CacheItemPool implements CacheItemPoolInterface
             'key' => $key,
             'value' => $value,
             'hash' => $hash,
-            'is_hit' => $isHit,
-            'default_ttl' => $this->defaultTtl,
+            'isHit' => $isHit,
+            'defaultTtl' => $this->defaultTtl,
             'expire' => $expire,
         ], CacheItem::class);
 
