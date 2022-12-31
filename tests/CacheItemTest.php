@@ -165,7 +165,7 @@ class CacheItemTest extends TestCase
             'value' => 'value1',
             'isHit' => false,
             'expire' => 0,
-            'default_ttl' => 1000,
+            'defaultTtl' => 1000,
             'hash' => 'hash1',
         ], CacheItem::class);
         $cacheItem->expiresAfter(null);
